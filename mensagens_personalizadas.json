@@ -1,0 +1,58 @@
+[
+  {
+    "id": 1,
+    "titulo": "🔥 Sextou - Leads Quentes",
+    "categoria": "sexta",
+    "mensagem": "Olá {nome}! 🎉✨\n\nSEXTOU! E nada melhor que começar o fim de semana com uma oportunidade incrível!\n\nSobre o imóvel {codigo} no valor de {valor}, ainda está disponível e com condições especiais para este final de semana! 🏠💎\n\nBora dar uma olhada? Te mando o link! 😊🚀",
+    "ativa": true
+  },
+  {
+    "id": 2,
+    "titulo": "🌡️ Acompanhamento - Leads Mornos",
+    "categoria": "acompanhamento",
+    "mensagem": "Olá {nome}! 👋😊\n\nFaz um tempinho que não falamos sobre o imóvel {codigo} no valor de {valor}...\n\nSurgiram algumas novidades que podem te interessar! 🔥\n\nAinda está na busca? Posso te mostrar as opções atualizadas! 😄",
+    "ativa": true
+  },
+  {
+    "id": 3,
+    "titulo": "❄️ Reativação - Leads Frios",
+    "categoria": "reativacao",
+    "mensagem": "Olá {nome}! 🙌😊\n\nLembrei de você! Ainda tem interesse no imóvel {codigo}? Apareceu outras opções interessantes também! 🏠✨\n\nSem pressão, só queria saber se ainda faz sentido te mandar umas opções.\n\nQual a boa? Me conta aí! 💬😊",
+    "ativa": true
+  },
+  {
+    "id": 4,
+    "titulo": "💰 Oportunidade - Investidor",
+    "categoria": "oportunidade",
+    "mensagem": "Olá {nome}! 😎💰\n\nSurgiu uma oportunidade IMPERDÍVEL de investimento!\n\nImóvel {codigo} no valor de {valor} com rentabilidade acima da média! 📈\n\nQuer ver os números? Te mando a análise completa! 🎯",
+    "ativa": true
+  },
+  {
+    "id": 5,
+    "titulo": "🏠 Primeira Compra - Sonho",
+    "categoria": "oportunidade",
+    "mensagem": "Olá {nome}! 🏠✨\n\nAchei o imóvel PERFEITO para você!\n\n{codigo} no valor de {valor} - exatamente o que você procurava! 📌\n\nFinanciamento facilitado e condições especiais! Bora agendar uma visita? 😊",
+    "ativa": true
+  },
+  {
+    "id": 7,
+    "titulo": "lead entrada",
+    "categoria": "sexta",
+    "mensagem": "Olá {nome}! Tudo bem? Meu nome é  Denilson, corretor da Júlio Bogoricin Copacabana 🏡 Vou dar segmento no seu interesse no imóvel em  Copacabana, gostaria de  mais alguma informação sobre o imóvel ? , deseja agendar uma visita ?  é  esse  mesmo que vc viu ?",
+    "ativa": true
+  },
+  {
+    "id": 10,
+    "titulo": "visita",
+    "categoria": "visita",
+    "mensagem": "Olá {nome}! tudo certo com nossa visita hoje as    ?",
+    "ativa": true
+  },
+  {
+    "id": 11,
+    "titulo": "opicion",
+    "categoria": "opcionista",
+    "mensagem": "Olá {nome}! sou Denilson corretor aqui de Copacabana , queria ver com você se é possível marcarmos uma visita neste imovel: {link}",
+    "ativa": true
+  }
+]

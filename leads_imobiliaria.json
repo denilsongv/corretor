@@ -1,0 +1,52 @@
+[
+  {
+    "id": 4,
+    "nome": "breno",
+    "telefone": "31999096060",
+    "data_cadastro": "2026-03-30",
+    "perfil": "primeira_compra",
+    "codigo_imovel": "",
+    "link_imovel": "wwww.kkk",
+    "valor_imovel": "450k",
+    "origem": "lead",
+    "status": "novo",
+    "ultimo_contato": "30/03/2026",
+    "observacoes": "",
+    "mensagens_enviadas": [
+      {
+        "data": "30/03/2026",
+        "mensagem": "Olá breno! 🙌😊\n\nLembrei de você! Ainda tem interesse no imóvel ? Apareceu outras opções!\n\nQual a boa?"
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "nome": "julio",
+    "telefone": "21987372474",
+    "data_cadastro": "30/03/2026",
+    "perfil": "primeira_compra",
+    "codigo_imovel": "",
+    "link_imovel": "",
+    "valor_imovel": "450k",
+    "origem": "opicionista",
+    "status": "novo",
+    "ultimo_contato": null,
+    "observacoes": "imovel para  daniele ",
+    "mensagens_enviadas": []
+  },
+  {
+    "id": 7,
+    "nome": "Tiago",
+    "telefone": "3199822-2232",
+    "data_cadastro": "31/03/2026",
+    "perfil": "primeira_compra",
+    "codigo_imovel": "JBC29840",
+    "link_imovel": "https://www.juliobogoricin.com/imovel/copacabana-posto-4-varanda-interna-dois-quartos/JBC29840",
+    "valor_imovel": "700k",
+    "origem": "lead",
+    "status": "novo",
+    "ultimo_contato": null,
+    "observacoes": "",
+    "mensagens_enviadas": []
+  }
+]
