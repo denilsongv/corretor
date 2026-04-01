@@ -113,18 +113,7 @@ def carregar_leads_google():
         return []
 
 # ==================== FUNÇÕES LOCAIS ====================
-def carregar_leads():
-    try:
-        if os.path.exists(ARQUIVO_DADOS):
-            with open(ARQUIVO_DADOS, 'r', encoding='utf-8') as f:
-                return json.load(f)
-    except:
-        pass
-    return []
 
-def salvar_leads(leads):
-    with open(ARQUIVO_DADOS, 'w', encoding='utf-8') as f:
-        json.dump(leads, f, indent=2, ensure_ascii=False)
 
 def carregar_mensagens():
     try:
