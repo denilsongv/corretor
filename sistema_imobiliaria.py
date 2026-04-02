@@ -818,7 +818,7 @@ def main():
                 with col_btn3:
                     telefone_limpo = formatar_telefone(lead_data["telefone"])
                     msg_encoded = urllib.parse.quote(mensagem_editavel)
-                    link_whats = f"https://wa.me/55{telefone_limpo}?text={msg_encoded}"
+                    link_whats = f"https://api.whatsapp.com/send?{params}"
 
                     st.link_button("💚 Abrir WhatsApp", link_whats, use_container_width=True)
                     st.caption(f"📱 {lead_data['telefone']}")
