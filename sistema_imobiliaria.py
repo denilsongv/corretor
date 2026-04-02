@@ -198,7 +198,7 @@ def carregar_mensagens():
             dados_padrao = [
                 [1, "🔥 Sextou - Leads Quentes", "sexta", "Olá {nome}! 🎉✨\n\nSEXTOU! Sobre o imóvel {codigo} no valor de {valor}, ainda está disponível! 🏠\n\nBora dar uma olhada? 😊", True],
                 [2, "🌡️ Acompanhamento", "acompanhamento", "Olá {nome}! 👋😊\n\nFaz um tempo que não falamos sobre o imóvel {codigo} no valor de {valor}...\n\nAinda está interessado? 😄", True],
-                [3, "❄️ Reativação", "reativacao", "Olá {nome}! 🙌😊\n\nLembrei de você! Ainda tem interesse no imóvel {codigo}? Apareceu outras opções! 🏠\n\nQual a boa? 💬", True]
+                [3, "❄️ Reativação", "reativacao", "Olá {nome}! 🙌😊\n\nLembrei de você! Ainda tem interesse no imóvel {codigo}? Apareceu outras opções! 🏠\n\nEsse que vove havia escolhido 💬", True]
             ]
             aba.append_rows(dados_padrao)
 
