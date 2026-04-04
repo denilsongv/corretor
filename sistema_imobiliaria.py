@@ -9,6 +9,7 @@ import subprocess
 import re
 import gspread
 
+
 # Configurar página
 st.set_page_config(page_title="Sistema Imobiliário", layout="wide", page_icon="🏢")
 
