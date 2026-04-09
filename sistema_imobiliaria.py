@@ -9,7 +9,6 @@ import subprocess
 import re
 import gspread
 
-
 # Configurar página
 st.set_page_config(page_title="Sistema Imobiliário", layout="wide", page_icon="🏢")
 
@@ -82,6 +81,39 @@ def inicializar_estado_form():
         st.session_state["resetar_form_lead"] = False
     if "nome_lead" not in st.session_state:
         resetar_form_lead()
+
+
+def resetar_form_agenda():
+    st.session_state["agenda_editando_id"] = None
+    st.session_state["lead_agenda"] = "-- Selecione um lead --"
+    st.session_state["titulo_agenda"] = ""
+    st.session_state["tipo_agenda"] = "visita"
+    st.session_state["data_agenda"] = datetime.now().date()
+    st.session_state["horario_agenda"] = datetime.strptime("09:00", "%H:%M").time()
+    st.session_state["obs_agenda"] = ""
+
+
+def carregar_campos_agenda(comp):
+    st.session_state["agenda_editando_id"] = comp.get("id")
+    st.session_state["lead_agenda"] = comp.get("lead_nome", "") or "-- Selecione um lead --"
+    st.session_state["titulo_agenda"] = str(comp.get("titulo", "") or "")
+    st.session_state["tipo_agenda"] = str(comp.get("tipo", "visita") or "visita")
+    try:
+        st.session_state["data_agenda"] = datetime.strptime(comp.get("data", ""), "%d/%m/%Y").date()
+    except Exception:
+        st.session_state["data_agenda"] = datetime.now().date()
+    try:
+        st.session_state["horario_agenda"] = datetime.strptime(comp.get("horario", "09:00"), "%H:%M").time()
+    except Exception:
+        st.session_state["horario_agenda"] = datetime.strptime("09:00", "%H:%M").time()
+    st.session_state["obs_agenda"] = str(comp.get("observacoes", "") or "")
+
+
+def inicializar_estado_agenda():
+    if "agenda_editando_id" not in st.session_state:
+        st.session_state["agenda_editando_id"] = None
+    if "lead_agenda" not in st.session_state:
+        resetar_form_agenda()
 
 
 # ==================== FUNÇÕES PARA LEADS ====================
@@ -483,6 +515,7 @@ def main():
         st.session_state.compromissos = carregar_compromissos()
 
     inicializar_estado_form()
+    inicializar_estado_agenda()
 
     metricas = analisar_metricas(st.session_state.leads)
 
@@ -1095,79 +1128,136 @@ def main():
         if compromissos_hoje:
             for comp in compromissos_hoje:
                 with st.container():
-                    col1, col2, col3, col4 = st.columns([2, 2, 2, 0.5])
+                    col1, col2, col3, col4, col5 = st.columns([2, 2, 1.4, 1.4, 0.6])
                     with col1:
                         tipo = comp.get("tipo", "visita")
                         if tipo == "visita":
                             st.markdown(f"🏠 **{comp['titulo']}**")
                         elif tipo == "ligacao":
                             st.markdown(f"📞 **{comp['titulo']}**")
+                        elif tipo == "reuniao":
+                            st.markdown(f"🤝 **{comp['titulo']}**")
                         else:
                             st.markdown(f"📌 **{comp['titulo']}**")
                         st.caption(comp.get("horario", ""))
                     with col2:
                         st.write(f"👤 {comp.get('lead_nome', '')}")
                     with col3:
-                        if st.button(f"✅ Concluir", key=f"concluir_{comp['id']}", use_container_width=True):
+                        if st.button("✏️ Editar", key=f"edit_comp_{comp['id']}", use_container_width=True):
+                            carregar_campos_agenda(comp)
+                            st.rerun()
+                    with col4:
+                        if st.button("✅ Concluir", key=f"concluir_{comp['id']}", use_container_width=True):
                             st.session_state.compromissos = [c for c in st.session_state.compromissos if c["id"] != comp["id"]]
                             if salvar_compromissos(st.session_state.compromissos):
                                 st.success("✅ Concluído!")
+                            if st.session_state.get("agenda_editando_id") == comp["id"]:
+                                resetar_form_agenda()
                             st.rerun()
-                    with col4:
+                    with col5:
                         if st.button("🗑️", key=f"del_comp_{comp['id']}"):
                             st.session_state.compromissos = [c for c in st.session_state.compromissos if c["id"] != comp["id"]]
                             if salvar_compromissos(st.session_state.compromissos):
                                 st.success("✅ Removido!")
+                            if st.session_state.get("agenda_editando_id") == comp["id"]:
+                                resetar_form_agenda()
                             st.rerun()
                     st.divider()
         else:
             st.info(f"📭 Nenhum compromisso para {data_str}")
 
         st.markdown("---")
-        st.markdown("### ✨ Novo Compromisso")
+        if st.session_state.get("agenda_editando_id"):
+            st.markdown("### ✏️ Editar Compromisso")
+        else:
+            st.markdown("### ✨ Novo Compromisso")
+
         col_form1, col_form2 = st.columns(2)
         with col_form1:
             if st.session_state.leads:
                 leads_opcoes = ["-- Selecione um lead --"] + [l["nome"] for l in st.session_state.leads]
-                lead_selecionado = st.selectbox("Lead relacionado", leads_opcoes, key="lead_agenda")
+                lead_padrao = st.session_state.get("lead_agenda", "-- Selecione um lead --")
+                if lead_padrao not in leads_opcoes:
+                    lead_padrao = "-- Selecione um lead --"
+                lead_index = leads_opcoes.index(lead_padrao)
+                lead_selecionado = st.selectbox("Lead relacionado", leads_opcoes, index=lead_index, key="lead_agenda")
             else:
                 lead_selecionado = "-- Selecione um lead --"
+
             titulo = st.text_input("Título do compromisso*", key="titulo_agenda")
-            tipo = st.selectbox("Tipo", ["visita", "ligacao", "reuniao", "outro"], key="tipo_agenda")
+
+            tipos_agenda = ["visita", "ligacao", "reuniao", "outro"]
+            tipo_padrao = st.session_state.get("tipo_agenda", "visita")
+            if tipo_padrao not in tipos_agenda:
+                tipo_padrao = "visita"
+            tipo = st.selectbox("Tipo", tipos_agenda, index=tipos_agenda.index(tipo_padrao), key="tipo_agenda")
+
         with col_form2:
-            data_comp = st.date_input("Data", datetime.now(), key="data_agenda")
+            data_comp = st.date_input("Data", key="data_agenda")
             horario = st.time_input("Horário", key="horario_agenda")
             observacoes_comp = st.text_area("Observações", key="obs_agenda")
 
-        if st.button("📅 Agendar", type="primary", use_container_width=True):
-            if titulo:
-                novo_id = max([c["id"] for c in st.session_state.compromissos], default=0) + 1
-                lead_nome = lead_selecionado if lead_selecionado != "-- Selecione um lead --" else ""
-                novo_comp = {
-                    "id": novo_id,
-                    "titulo": titulo,
-                    "tipo": tipo,
-                    "data": data_comp.strftime("%d/%m/%Y"),
-                    "horario": horario.strftime("%H:%M"),
-                    "lead_nome": lead_nome,
-                    "observacoes": observacoes_comp,
-                    "criado_em": datetime.now().strftime("%d/%m/%Y %H:%M")
-                }
-                st.session_state.compromissos.append(novo_comp)
-                if salvar_compromissos(st.session_state.compromissos):
-                    st.success(f"✅ Agendado para {data_comp.strftime('%d/%m/%Y')} às {horario.strftime('%H:%M')}!")
-                st.rerun()
-            else:
-                st.error("❌ Título obrigatório!")
+        col_ag1, col_ag2 = st.columns(2)
+        with col_ag1:
+            label_botao = "💾 Salvar Alterações" if st.session_state.get("agenda_editando_id") else "📅 Agendar"
+            if st.button(label_botao, type="primary", use_container_width=True):
+                if titulo:
+                    lead_nome = lead_selecionado if lead_selecionado != "-- Selecione um lead --" else ""
+                    if st.session_state.get("agenda_editando_id"):
+                        for i, comp in enumerate(st.session_state.compromissos):
+                            if comp["id"] == st.session_state["agenda_editando_id"]:
+                                st.session_state.compromissos[i] = {
+                                    "id": comp["id"],
+                                    "titulo": titulo,
+                                    "tipo": tipo,
+                                    "data": data_comp.strftime("%d/%m/%Y"),
+                                    "horario": horario.strftime("%H:%M"),
+                                    "lead_nome": lead_nome,
+                                    "observacoes": observacoes_comp,
+                                    "criado_em": comp.get("criado_em", datetime.now().strftime("%d/%m/%Y %H:%M"))
+                                }
+                                break
+                        if salvar_compromissos(st.session_state.compromissos):
+                            st.success("✅ Compromisso atualizado!")
+                    else:
+                        novo_id = max([c["id"] for c in st.session_state.compromissos], default=0) + 1
+                        novo_comp = {
+                            "id": novo_id,
+                            "titulo": titulo,
+                            "tipo": tipo,
+                            "data": data_comp.strftime("%d/%m/%Y"),
+                            "horario": horario.strftime("%H:%M"),
+                            "lead_nome": lead_nome,
+                            "observacoes": observacoes_comp,
+                            "criado_em": datetime.now().strftime("%d/%m/%Y %H:%M")
+                        }
+                        st.session_state.compromissos.append(novo_comp)
+                        if salvar_compromissos(st.session_state.compromissos):
+                            st.success(f"✅ Agendado para {data_comp.strftime('%d/%m/%Y')} às {horario.strftime('%H:%M')}!")
+                    resetar_form_agenda()
+                    st.rerun()
+                else:
+                    st.error("❌ Título obrigatório!")
+
+        with col_ag2:
+            if st.session_state.get("agenda_editando_id"):
+                if st.button("❌ Cancelar edição", use_container_width=True):
+                    resetar_form_agenda()
+                    st.rerun()
 
         st.markdown("---")
         st.markdown("### 📋 Próximos Compromissos")
-        hoje = datetime.now().strftime("%d/%m/%Y")
-        futuros = [c for c in st.session_state.compromissos if c.get("data") >= hoje]
-        futuros.sort(key=lambda x: (x.get("data", ""), x.get("horario", "")))
+        futuros = []
+        for c in st.session_state.compromissos:
+            try:
+                dt_comp = datetime.strptime(f"{c.get('data', '')} {c.get('horario', '00:00')}", "%d/%m/%Y %H:%M")
+                futuros.append((dt_comp, c))
+            except Exception:
+                continue
+        futuros.sort(key=lambda x: x[0])
 
         if futuros:
-            for comp in futuros[:5]:
+            for _, comp in futuros[:5]:
                 icon = "🏠" if comp["tipo"] == "visita" else "📞" if comp["tipo"] == "ligacao" else "🤝" if comp["tipo"] == "reuniao" else "📌"
                 st.markdown(f"- {icon} **{comp['titulo']}** - {comp['data']} às {comp['horario']} - {comp.get('lead_nome', 'Sem lead')}")
         else:
