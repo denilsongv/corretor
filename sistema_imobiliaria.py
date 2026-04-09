@@ -93,6 +93,10 @@ def resetar_form_agenda():
     st.session_state["obs_agenda"] = ""
 
 
+def solicitar_reset_form_agenda():
+    st.session_state["resetar_form_agenda"] = True
+
+
 def carregar_campos_agenda(comp):
     st.session_state["agenda_editando_id"] = comp.get("id")
     st.session_state["lead_agenda"] = comp.get("lead_nome", "") or "-- Selecione um lead --"
@@ -112,6 +116,8 @@ def carregar_campos_agenda(comp):
 def inicializar_estado_agenda():
     if "agenda_editando_id" not in st.session_state:
         st.session_state["agenda_editando_id"] = None
+    if "resetar_form_agenda" not in st.session_state:
+        st.session_state["resetar_form_agenda"] = False
     if "lead_agenda" not in st.session_state:
         resetar_form_agenda()
 
@@ -1119,6 +1125,10 @@ def main():
             st.subheader("📅 Agenda de Compromissos")
         st.markdown("Gerencie visitas, ligações e reuniões")
 
+        if st.session_state.get("resetar_form_agenda", False):
+            resetar_form_agenda()
+            st.session_state["resetar_form_agenda"] = False
+
         data_selecionada = st.date_input("📆 Selecione a data:", datetime.now())
         data_str = data_selecionada.strftime("%d/%m/%Y")
         st.markdown("---")
@@ -1152,7 +1162,7 @@ def main():
                             if salvar_compromissos(st.session_state.compromissos):
                                 st.success("✅ Concluído!")
                             if st.session_state.get("agenda_editando_id") == comp["id"]:
-                                resetar_form_agenda()
+                                solicitar_reset_form_agenda()
                             st.rerun()
                     with col5:
                         if st.button("🗑️", key=f"del_comp_{comp['id']}"):
@@ -1160,7 +1170,7 @@ def main():
                             if salvar_compromissos(st.session_state.compromissos):
                                 st.success("✅ Removido!")
                             if st.session_state.get("agenda_editando_id") == comp["id"]:
-                                resetar_form_agenda()
+                                solicitar_reset_form_agenda()
                             st.rerun()
                     st.divider()
         else:
@@ -1234,7 +1244,7 @@ def main():
                         st.session_state.compromissos.append(novo_comp)
                         if salvar_compromissos(st.session_state.compromissos):
                             st.success(f"✅ Agendado para {data_comp.strftime('%d/%m/%Y')} às {horario.strftime('%H:%M')}!")
-                    resetar_form_agenda()
+                    solicitar_reset_form_agenda()
                     st.rerun()
                 else:
                     st.error("❌ Título obrigatório!")
@@ -1242,7 +1252,7 @@ def main():
         with col_ag2:
             if st.session_state.get("agenda_editando_id"):
                 if st.button("❌ Cancelar edição", use_container_width=True):
-                    resetar_form_agenda()
+                    solicitar_reset_form_agenda()
                     st.rerun()
 
         st.markdown("---")
