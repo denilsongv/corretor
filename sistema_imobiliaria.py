@@ -115,7 +115,7 @@ def salvar_leads(leads):
         st.error(f"Erro ao salvar leads: {e}")
         return False
 
-# ==================== FUNÇÕES PARA MENSAGENS (já existentes) ====================
+# ==================== FUNÇÕES PARA MENSAGENS ====================
 def carregar_mensagens():
     client = conectar_google_sheets()
     if not client:
@@ -174,7 +174,7 @@ def salvar_mensagens(mensagens):
         st.error(f"Erro ao salvar mensagens: {e}")
         return False
 
-# ==================== FUNÇÕES PARA AGENDA (já existentes) ====================
+# ==================== FUNÇÕES PARA AGENDA ====================
 def carregar_compromissos():
     client = conectar_google_sheets()
     if not client:
@@ -492,7 +492,6 @@ def main():
     with st.sidebar:
         st.header("📝 Cadastro / Edição")
 
-        # Lógica de seleção e edição de leads (mantida do código original)
         if st.session_state.leads:
             nomes_leads = [l["nome"] for l in st.session_state.leads]
             lead_para_editar = st.selectbox("Selecione um lead:", ["➕ Novo Lead"] + nomes_leads)
@@ -507,7 +506,6 @@ def main():
             lead_edit = None
             st.info("➕ Cadastrar novo lead")
 
-        # Campos do lead
         nome = st.text_input("Nome do Cliente", value=lead_edit["nome"] if lead_edit else "")
         telefone = st.text_input("Telefone (apenas números)", value=lead_edit["telefone"] if lead_edit else "")
 
@@ -528,7 +526,7 @@ def main():
         status_index = STATUS_LISTA.index(lead_edit["status"]) if lead_edit and lead_edit.get("status") in STATUS_LISTA else 0
         status = st.selectbox("Status", STATUS_LISTA, index=status_index)
 
-        # NOVOS CAMPOS DE PREFERÊNCIA
+        # Preferências do cliente
         st.markdown("### 🎯 Preferências do Cliente")
         quartos_desejados = st.number_input("Quartos desejados", min_value=0, step=1, value=lead_edit["quartos_desejados"] if lead_edit and lead_edit.get("quartos_desejados") else 0)
         banheiros_desejados = st.number_input("Banheiros desejados", min_value=0, step=1, value=lead_edit["banheiros_desejados"] if lead_edit and lead_edit.get("banheiros_desejados") else 0)
@@ -747,7 +745,7 @@ def main():
                 else:
                     st.info("Nenhum imóvel recomendado no momento. Ajuste os filtros ou cadastre mais imóveis.")
 
-                # ==================== MENSAGEM PRONTA (original) ====================
+                # ==================== MENSAGEM PRONTA ====================
                 st.markdown("---")
                 st.subheader(f"📱 Mensagem para {lead_data['nome']}")
                 mensagens_ativas = [m for m in st.session_state.mensagens_personalizadas if m.get("ativa", True)]
@@ -861,7 +859,7 @@ def main():
         else:
             st.info("Nenhum lead cadastrado. Cadastre um na barra lateral.")
 
-    # ==================== TAB 2 - ANÁLISE (mantida igual) ====================
+    # ==================== TAB 2 - ANÁLISE ====================
     with tab2:
         st.subheader("📊 Análise de Dados e Recomendações")
         if metricas and metricas["total_leads"] > 0:
@@ -910,7 +908,7 @@ def main():
         else:
             st.info("Cadastre mais leads para gerar análises e recomendações!")
 
-    # ==================== TAB 3 - GERENCIAR MENSAGENS (mantida igual) ====================
+    # ==================== TAB 3 - GERENCIAR MENSAGENS ====================
     with tab3:
         st.subheader("✏️ Gerenciar Mensagens Personalizadas")
         st.markdown("Crie, edite e gerencie suas próprias mensagens para usar no WhatsApp.")
@@ -1022,7 +1020,7 @@ def main():
             else:
                 st.info("Nenhuma mensagem personalizada. Crie sua primeira mensagem!")
 
-    # ==================== TAB 4 - AGENDA (mantida igual) ====================
+    # ==================== TAB 4 - AGENDA ====================
     with tab4:
         compromissos_hoje_count = len(get_compromissos_hoje(st.session_state.compromissos))
         if compromissos_hoje_count > 0:
@@ -1134,22 +1132,31 @@ def main():
 
             if st.button("💾 Salvar Imóvel", type="primary"):
                 if codigo and valor:
-                    novo_id = max([i["id"] for i in st.session_state.imoveis], default=0) + 1
-                    novo_imv = {
-                        "id": novo_id,
-                        "codigo": codigo,
-                        "valor": valor,
-                        "quartos": quartos,
-                        "banheiros": banheiros,
-                        "bairro": bairro,
-                        "rua": rua,
-                        "link": link,
-                        "opcionista": opcionista
-                    }
-                    st.session_state.imoveis.append(novo_imv)
-                    if salvar_imoveis(st.session_state.imoveis):
-                        st.success("Imóvel cadastrado com sucesso!")
-                    st.rerun()
+                    # Verificar duplicatas
+                    codigo_existente = any(i["codigo"] == codigo for i in st.session_state.imoveis)
+                    link_existente = any(i["link"] == link for i in st.session_state.imoveis) if link else False
+
+                    if codigo_existente:
+                        st.error("❌ Já existe um imóvel com este código! Use um código diferente.")
+                    elif link_existente:
+                        st.error("❌ Já existe um imóvel com este link! Use um link diferente.")
+                    else:
+                        novo_id = max([i["id"] for i in st.session_state.imoveis], default=0) + 1
+                        novo_imv = {
+                            "id": novo_id,
+                            "codigo": codigo,
+                            "valor": valor,
+                            "quartos": quartos,
+                            "banheiros": banheiros,
+                            "bairro": bairro,
+                            "rua": rua,
+                            "link": link,
+                            "opcionista": opcionista
+                        }
+                        st.session_state.imoveis.append(novo_imv)
+                        if salvar_imoveis(st.session_state.imoveis):
+                            st.success("Imóvel cadastrado com sucesso!")
+                        st.rerun()
                 else:
                     st.error("Código e valor são obrigatórios.")
 
