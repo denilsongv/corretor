@@ -47,7 +47,7 @@ def carregar_leads():
         if aba.row_count == 0 or not aba.get_all_values():
             cabecalho = ["ID", "Nome", "Telefone", "Data Cadastro", "Perfil", "Código Imóvel",
                          "Link Imóvel", "Valor", "Origem", "Status", "Último Contato", "Observações",
-                         "Quartos Desejados", "Banheiros Desejados", "Bairro Desejado"]
+                         "Quartos Desejados", "Banheiros Desejados", "Vagas Desejadas", "Bairro Desejado"]
             aba.append_row(cabecalho)
         dados = aba.get_all_records()
         leads = []
@@ -69,6 +69,7 @@ def carregar_leads():
                 "observacoes": str(row.get("Observações", "")),
                 "quartos_desejados": row.get("Quartos Desejados", ""),
                 "banheiros_desejados": row.get("Banheiros Desejados", ""),
+                "vagas_desejadas": row.get("Vagas Desejadas", ""),
                 "bairro_desejado": str(row.get("Bairro Desejado", "")),
                 "mensagens_enviadas": []
             })
@@ -86,7 +87,7 @@ def salvar_leads(leads):
         aba = garantir_aba(planilha, ABA_LEADS)
         cabecalho = ["ID", "Nome", "Telefone", "Data Cadastro", "Perfil", "Código Imóvel",
                      "Link Imóvel", "Valor", "Origem", "Status", "Último Contato", "Observações",
-                     "Quartos Desejados", "Banheiros Desejados", "Bairro Desejado"]
+                     "Quartos Desejados", "Banheiros Desejados", "Vagas Desejadas", "Bairro Desejado"]
         dados = []
         for lead in leads:
             dados.append([
@@ -104,6 +105,7 @@ def salvar_leads(leads):
                 lead.get("observacoes", ""),
                 lead.get("quartos_desejados", ""),
                 lead.get("banheiros_desejados", ""),
+                lead.get("vagas_desejadas", ""),
                 lead.get("bairro_desejado", "")
             ])
         aba.clear()
@@ -259,7 +261,7 @@ def carregar_imoveis():
         planilha = abrir_planilha(client)
         aba = garantir_aba(planilha, ABA_IMOVEIS)
         if aba.row_count == 0 or not aba.get_all_values():
-            cabecalho = ["ID", "Código", "Valor", "Quartos", "Banheiros", "Bairro", "Rua", "Link", "Opcionista"]
+            cabecalho = ["ID", "Código", "Valor", "Quartos", "Banheiros", "Vagas", "Bairro", "Rua", "Link", "Opcionista"]
             aba.append_row(cabecalho)
         dados = aba.get_all_records()
         imoveis = []
@@ -271,6 +273,7 @@ def carregar_imoveis():
                     "valor": str(row.get("Valor", "")),
                     "quartos": row.get("Quartos", ""),
                     "banheiros": row.get("Banheiros", ""),
+                    "vagas": row.get("Vagas", ""),
                     "bairro": str(row.get("Bairro", "")),
                     "rua": str(row.get("Rua", "")),
                     "link": str(row.get("Link", "")),
@@ -288,7 +291,7 @@ def salvar_imoveis(imoveis):
     try:
         planilha = abrir_planilha(client)
         aba = garantir_aba(planilha, ABA_IMOVEIS)
-        cabecalho = ["ID", "Código", "Valor", "Quartos", "Banheiros", "Bairro", "Rua", "Link", "Opcionista"]
+        cabecalho = ["ID", "Código", "Valor", "Quartos", "Banheiros", "Vagas", "Bairro", "Rua", "Link", "Opcionista"]
         dados = []
         for imv in imoveis:
             dados.append([
@@ -297,6 +300,7 @@ def salvar_imoveis(imoveis):
                 imv.get("valor", ""),
                 imv.get("quartos", ""),
                 imv.get("banheiros", ""),
+                imv.get("vagas", ""),
                 imv.get("bairro", ""),
                 imv.get("rua", ""),
                 imv.get("link", ""),
@@ -343,6 +347,9 @@ def recomendar_imoveis(lead, imoveis, tolerancia=0.15):
             continue
         ban_desejado = lead.get("banheiros_desejados")
         if ban_desejado and imv.get("banheiros") and int(imv.get("banheiros")) != int(ban_desejado):
+            continue
+        vagas_desejadas = lead.get("vagas_desejadas")
+        if vagas_desejadas and imv.get("vagas") and int(imv.get("vagas")) != int(vagas_desejadas):
             continue
         bairro_desejado = lead.get("bairro_desejado", "").strip().lower()
         if bairro_desejado and bairro_desejado not in imv.get("bairro", "").lower():
@@ -494,45 +501,94 @@ def main():
             lead_para_editar = "➕ Novo Lead"
         st.markdown("---")
 
-        if lead_para_editar != "➕ Novo Lead":
-            lead_edit = next((l for l in st.session_state.leads if l["nome"] == lead_para_editar), None)
-            st.info(f"✏️ Editando: {lead_edit['nome']}" if lead_edit else "✏️ Editando lead")
-        else:
+        # Reset automático quando "➕ Novo Lead" é selecionado
+        if lead_para_editar == "➕ Novo Lead":
+            # Limpar todos os campos do formulário
+            nome_val = ""
+            telefone_val = ""
+            perfil_val = list(PERFIS.keys())[0]
+            codigo_val = ""
+            link_val = ""
+            valor_val = VALORES_IMOVEL[0]
+            origem_val = ORIGENS[0]
+            status_val = STATUS_LISTA[0]
+            quartos_desejados_val = 0
+            banheiros_desejados_val = 0
+            vagas_desejadas_val = 0
+            bairro_desejado_val = ""
+            observacoes_val = ""
             lead_edit = None
+        else:
+            lead_edit = next((l for l in st.session_state.leads if l["nome"] == lead_para_editar), None)
+            if lead_edit:
+                nome_val = lead_edit["nome"]
+                telefone_val = lead_edit["telefone"]
+                perfil_val = lead_edit["perfil"]
+                codigo_val = lead_edit.get("codigo_imovel", "")
+                link_val = lead_edit.get("link_imovel", "")
+                valor_val = lead_edit.get("valor_imovel", VALORES_IMOVEL[0])
+                origem_val = lead_edit.get("origem", ORIGENS[0])
+                status_val = lead_edit.get("status", STATUS_LISTA[0])
+                quartos_desejados_val = lead_edit.get("quartos_desejados", 0)
+                banheiros_desejados_val = lead_edit.get("banheiros_desejados", 0)
+                vagas_desejadas_val = lead_edit.get("vagas_desejadas", 0)
+                bairro_desejado_val = lead_edit.get("bairro_desejado", "")
+                observacoes_val = lead_edit.get("observacoes", "")
+            else:
+                # Caso não encontre (fallback)
+                nome_val = ""
+                telefone_val = ""
+                perfil_val = list(PERFIS.keys())[0]
+                codigo_val = ""
+                link_val = ""
+                valor_val = VALORES_IMOVEL[0]
+                origem_val = ORIGENS[0]
+                status_val = STATUS_LISTA[0]
+                quartos_desejados_val = 0
+                banheiros_desejados_val = 0
+                vagas_desejadas_val = 0
+                bairro_desejado_val = ""
+                observacoes_val = ""
+
+        if lead_edit:
+            st.info(f"✏️ Editando: {lead_edit['nome']}")
+        else:
             st.info("➕ Cadastrar novo lead")
 
-        nome = st.text_input("Nome do Cliente", value=lead_edit["nome"] if lead_edit else "")
-        telefone = st.text_input("Telefone (apenas números)", value=lead_edit["telefone"] if lead_edit else "")
+        nome = st.text_input("Nome do Cliente", value=nome_val)
+        telefone = st.text_input("Telefone (apenas números)", value=telefone_val)
 
-        perfil_index = list(PERFIS.keys()).index(lead_edit["perfil"]) if lead_edit and lead_edit.get("perfil") in PERFIS else 0
+        perfil_index = list(PERFIS.keys()).index(perfil_val) if perfil_val in PERFIS else 0
         perfil = st.selectbox("Perfil", list(PERFIS.keys()), index=perfil_index, format_func=lambda x: PERFIS[x]["titulo"])
 
         st.markdown("### 🏠 Informações do Imóvel")
-        codigo_imovel = st.text_input("Código do Imóvel", value=lead_edit["codigo_imovel"] if lead_edit else "")
-        link_imovel = st.text_input("Link do Imóvel", value=lead_edit["link_imovel"] if lead_edit else "")
+        codigo_imovel = st.text_input("Código do Imóvel", value=codigo_val)
+        link_imovel = st.text_input("Link do Imóvel", value=link_val)
 
-        valor_index = VALORES_IMOVEL.index(lead_edit["valor_imovel"]) if lead_edit and lead_edit.get("valor_imovel") in VALORES_IMOVEL else 0
+        valor_index = VALORES_IMOVEL.index(valor_val) if valor_val in VALORES_IMOVEL else 0
         valor_imovel = st.selectbox("Valor do Imóvel", VALORES_IMOVEL, index=valor_index)
 
         st.markdown("### 📍 Origem")
-        origem_index = ORIGENS.index(lead_edit["origem"]) if lead_edit and lead_edit.get("origem") in ORIGENS else 0
+        origem_index = ORIGENS.index(origem_val) if origem_val in ORIGENS else 0
         origem = st.selectbox("Origem", ORIGENS, index=origem_index)
 
-        status_index = STATUS_LISTA.index(lead_edit["status"]) if lead_edit and lead_edit.get("status") in STATUS_LISTA else 0
+        status_index = STATUS_LISTA.index(status_val) if status_val in STATUS_LISTA else 0
         status = st.selectbox("Status", STATUS_LISTA, index=status_index)
 
         st.markdown("### 🎯 Preferências do Cliente")
-        quartos_desejados = st.number_input("Quartos desejados", min_value=0, step=1, value=lead_edit["quartos_desejados"] if lead_edit and lead_edit.get("quartos_desejados") else 0)
-        banheiros_desejados = st.number_input("Banheiros desejados", min_value=0, step=1, value=lead_edit["banheiros_desejados"] if lead_edit and lead_edit.get("banheiros_desejados") else 0)
-        bairro_desejado = st.text_input("Bairro desejado", value=lead_edit["bairro_desejado"] if lead_edit else "")
+        quartos_desejados = st.number_input("Quartos desejados", min_value=0, step=1, value=int(quartos_desejados_val))
+        banheiros_desejados = st.number_input("Banheiros desejados", min_value=0, step=1, value=int(banheiros_desejados_val))
+        vagas_desejadas = st.number_input("Vagas desejadas", min_value=0, step=1, value=int(vagas_desejadas_val))
+        bairro_desejado = st.text_input("Bairro desejado", value=bairro_desejado_val)
 
-        observacoes = st.text_area("Observações", value=lead_edit["observacoes"] if lead_edit else "")
+        observacoes = st.text_area("Observações", value=observacoes_val)
 
         col_salvar, col_deletar = st.columns(2)
         with col_salvar:
             if st.button("💾 Salvar", type="primary", use_container_width=True):
                 if nome and telefone:
-                    if lead_para_editar != "➕ Novo Lead" and lead_edit:
+                    if lead_edit:
+                        # Atualizar lead existente
                         for i, lead in enumerate(st.session_state.leads):
                             if lead["id"] == lead_edit["id"]:
                                 st.session_state.leads[i] = {
@@ -550,12 +606,14 @@ def main():
                                     "observacoes": observacoes,
                                     "quartos_desejados": quartos_desejados,
                                     "banheiros_desejados": banheiros_desejados,
+                                    "vagas_desejadas": vagas_desejadas,
                                     "bairro_desejado": bairro_desejado,
                                     "mensagens_enviadas": lead_edit.get("mensagens_enviadas", [])
                                 }
                                 st.success(f"✅ {nome} atualizado!")
                                 break
                     else:
+                        # Criar novo lead
                         novo_id = max([l["id"] for l in st.session_state.leads], default=0) + 1
                         novo_lead = {
                             "id": novo_id,
@@ -572,6 +630,7 @@ def main():
                             "observacoes": observacoes,
                             "quartos_desejados": quartos_desejados,
                             "banheiros_desejados": banheiros_desejados,
+                            "vagas_desejadas": vagas_desejadas,
                             "bairro_desejado": bairro_desejado,
                             "mensagens_enviadas": []
                         }
@@ -580,12 +639,13 @@ def main():
 
                     if salvar_leads(st.session_state.leads):
                         st.success("✅ Dados salvos no Google Sheets!")
+                    # Forçar reset do formulário recarregando a página
                     st.rerun()
                 else:
                     st.error("❌ Nome e telefone são obrigatórios!")
 
         with col_deletar:
-            if lead_para_editar != "➕ Novo Lead" and lead_edit:
+            if lead_edit:
                 if st.button("🗑️ Deletar", use_container_width=True):
                     st.session_state.leads = [l for l in st.session_state.leads if l["id"] != lead_edit["id"]]
                     if salvar_leads(st.session_state.leads):
@@ -726,12 +786,12 @@ def main():
                         with st.container():
                             col1, col2, col3 = st.columns([2, 1, 1])
                             with col1:
-                                st.markdown(f"**{imv['codigo']}** – {imv['valor']} – {imv['quartos']} quartos, {imv['banheiros']} banheiros – {imv['bairro']}, {imv['rua']}")
+                                st.markdown(f"**{imv['codigo']}** – {imv['valor']} – {imv['quartos']} quartos, {imv['banheiros']} banheiros, {imv['vagas']} vagas – {imv['bairro']}, {imv['rua']}")
                             with col2:
                                 if imv['link']:
                                     st.link_button("🔗 Ver anúncio", imv['link'], use_container_width=True)
                             with col3:
-                                msg_recomendacao = f"Olá {lead_data['nome'].split()[0]}! Encontrei um imóvel que pode te atender:\n\nCódigo: {imv['codigo']}\nValor: {imv['valor']}\nQuartos: {imv['quartos']}\nBanheiros: {imv['banheiros']}\nBairro: {imv['bairro']}\nRua: {imv['rua']}\nLink: {imv['link']}\n\nO que achou? Posso agendar uma visita!"
+                                msg_recomendacao = f"Olá {lead_data['nome'].split()[0]}! Encontrei um imóvel que pode te atender:\n\nCódigo: {imv['codigo']}\nValor: {imv['valor']}\nQuartos: {imv['quartos']}\nBanheiros: {imv['banheiros']}\nVagas: {imv['vagas']}\nBairro: {imv['bairro']}\nRua: {imv['rua']}\nLink: {imv['link']}\n\nO que achou? Posso agendar uma visita!"
                                 telefone_limpo = re.sub(r"\D", "", lead_data["telefone"])
                                 link_whats = f"https://api.whatsapp.com/send?phone=55{telefone_limpo}&text={urllib.parse.quote(msg_recomendacao)}"
                                 st.link_button("💚 Recomendar", link_whats, use_container_width=True)
@@ -828,6 +888,7 @@ def main():
                     st.markdown(f"**Observações:** {lead_data.get('observacoes', '-')}")
                     st.markdown(f"**Quartos desejados:** {lead_data.get('quartos_desejados', '-')}")
                     st.markdown(f"**Banheiros desejados:** {lead_data.get('banheiros_desejados', '-')}")
+                    st.markdown(f"**Vagas desejadas:** {lead_data.get('vagas_desejadas', '-')}")
                     st.markdown(f"**Bairro desejado:** {lead_data.get('bairro_desejado', '-')}")
                     if lead_data.get("mensagens_enviadas"):
                         st.markdown("**📨 Últimas mensagens:**")
@@ -1108,7 +1169,7 @@ def main():
         else:
             st.info("Nenhum compromisso futuro")
 
-    # ==================== TAB 5 - IMÓVEIS (COM EDIÇÃO) ====================
+    # ==================== TAB 5 - IMÓVEIS ====================
     with tab5:
         st.subheader("🏢 Base de Imóveis")
         st.markdown("Cadastre e edite os imóveis do seu acervo.")
@@ -1119,6 +1180,7 @@ def main():
             valor = st.selectbox("Valor", VALORES_IMOVEL)
             quartos = st.number_input("Quartos", min_value=0, step=1)
             banheiros = st.number_input("Banheiros", min_value=0, step=1)
+            vagas = st.number_input("Vagas", min_value=0, step=1)
             bairro = st.text_input("Bairro")
             rua = st.text_input("Rua")
             link = st.text_input("Link do anúncio")
@@ -1140,6 +1202,7 @@ def main():
                             "valor": valor,
                             "quartos": quartos,
                             "banheiros": banheiros,
+                            "vagas": vagas,
                             "bairro": bairro,
                             "rua": rua,
                             "link": link,
@@ -1155,7 +1218,6 @@ def main():
         # Lista de imóveis existentes
         st.markdown("### 📋 Imóveis Cadastrados")
         if st.session_state.imoveis:
-            # Exibir tabela
             df_imoveis = pd.DataFrame(st.session_state.imoveis)
             st.dataframe(df_imoveis, use_container_width=True, hide_index=True)
 
@@ -1171,6 +1233,7 @@ def main():
                 novo_valor = st.selectbox("Valor", VALORES_IMOVEL, index=VALORES_IMOVEL.index(imv_editar["valor"]) if imv_editar["valor"] in VALORES_IMOVEL else 0)
                 novo_quartos = st.number_input("Quartos", value=int(imv_editar["quartos"]) if imv_editar["quartos"] else 0, step=1)
                 novo_banheiros = st.number_input("Banheiros", value=int(imv_editar["banheiros"]) if imv_editar["banheiros"] else 0, step=1)
+                novo_vagas = st.number_input("Vagas", value=int(imv_editar["vagas"]) if imv_editar["vagas"] else 0, step=1)
                 novo_bairro = st.text_input("Bairro", value=imv_editar["bairro"])
                 novo_rua = st.text_input("Rua", value=imv_editar["rua"])
                 novo_link = st.text_input("Link do anúncio", value=imv_editar["link"])
@@ -1183,7 +1246,6 @@ def main():
                     cancel = st.form_submit_button("❌ Cancelar", use_container_width=True)
 
                 if submitted:
-                    # Verifica duplicatas (exceto o próprio imóvel)
                     codigo_existente = any(i["codigo"] == novo_codigo and i["id"] != id_editar for i in st.session_state.imoveis)
                     link_existente = any(i["link"] == novo_link and i["id"] != id_editar for i in st.session_state.imoveis) if novo_link else False
                     if codigo_existente:
@@ -1197,6 +1259,7 @@ def main():
                                 i["valor"] = novo_valor
                                 i["quartos"] = novo_quartos
                                 i["banheiros"] = novo_banheiros
+                                i["vagas"] = novo_vagas
                                 i["bairro"] = novo_bairro
                                 i["rua"] = novo_rua
                                 i["link"] = novo_link
