@@ -8,7 +8,6 @@ import urllib.parse
 import re
 import gspread
 
-# Configurar página
 st.set_page_config(page_title="Sistema Imobiliário", layout="wide", page_icon="🏢")
 
 # ==================== CONFIGURAÇÃO DO GOOGLE SHEETS ====================
@@ -54,6 +53,14 @@ def carregar_leads():
         for i, row in enumerate(dados):
             if i == 0 and row.get("ID") == "ID":
                 continue
+            # Função para converter para inteiro, tratando vazio/None
+            def to_int(val):
+                if val is None or str(val).strip() == "":
+                    return 0
+                try:
+                    return int(val)
+                except:
+                    return 0
             leads.append({
                 "id": int(row.get("ID", i+1)),
                 "nome": str(row.get("Nome", "")),
@@ -67,9 +74,9 @@ def carregar_leads():
                 "status": str(row.get("Status", "novo")),
                 "ultimo_contato": str(row.get("Último Contato", "")),
                 "observacoes": str(row.get("Observações", "")),
-                "quartos_desejados": row.get("Quartos Desejados", ""),
-                "banheiros_desejados": row.get("Banheiros Desejados", ""),
-                "vagas_desejadas": row.get("Vagas Desejadas", ""),
+                "quartos_desejados": to_int(row.get("Quartos Desejados")),
+                "banheiros_desejados": to_int(row.get("Banheiros Desejados")),
+                "vagas_desejadas": to_int(row.get("Vagas Desejadas")),
                 "bairro_desejado": str(row.get("Bairro Desejado", "")),
                 "mensagens_enviadas": []
             })
@@ -103,9 +110,9 @@ def salvar_leads(leads):
                 lead.get("status", ""),
                 lead.get("ultimo_contato", ""),
                 lead.get("observacoes", ""),
-                lead.get("quartos_desejados", ""),
-                lead.get("banheiros_desejados", ""),
-                lead.get("vagas_desejadas", ""),
+                lead.get("quartos_desejados", 0),
+                lead.get("banheiros_desejados", 0),
+                lead.get("vagas_desejadas", 0),
                 lead.get("bairro_desejado", "")
             ])
         aba.clear()
@@ -271,9 +278,9 @@ def carregar_imoveis():
                     "id": row.get("ID"),
                     "codigo": str(row.get("Código", "")),
                     "valor": str(row.get("Valor", "")),
-                    "quartos": row.get("Quartos", ""),
-                    "banheiros": row.get("Banheiros", ""),
-                    "vagas": row.get("Vagas", ""),
+                    "quartos": row.get("Quartos", 0),
+                    "banheiros": row.get("Banheiros", 0),
+                    "vagas": row.get("Vagas", 0),
                     "bairro": str(row.get("Bairro", "")),
                     "rua": str(row.get("Rua", "")),
                     "link": str(row.get("Link", "")),
@@ -298,9 +305,9 @@ def salvar_imoveis(imoveis):
                 imv.get("id", ""),
                 imv.get("codigo", ""),
                 imv.get("valor", ""),
-                imv.get("quartos", ""),
-                imv.get("banheiros", ""),
-                imv.get("vagas", ""),
+                imv.get("quartos", 0),
+                imv.get("banheiros", 0),
+                imv.get("vagas", 0),
                 imv.get("bairro", ""),
                 imv.get("rua", ""),
                 imv.get("link", ""),
@@ -503,7 +510,6 @@ def main():
 
         # Reset automático quando "➕ Novo Lead" é selecionado
         if lead_para_editar == "➕ Novo Lead":
-            # Limpar todos os campos do formulário
             nome_val = ""
             telefone_val = ""
             perfil_val = list(PERFIS.keys())[0]
@@ -535,7 +541,7 @@ def main():
                 bairro_desejado_val = lead_edit.get("bairro_desejado", "")
                 observacoes_val = lead_edit.get("observacoes", "")
             else:
-                # Caso não encontre (fallback)
+                # Fallback
                 nome_val = ""
                 telefone_val = ""
                 perfil_val = list(PERFIS.keys())[0]
@@ -549,6 +555,7 @@ def main():
                 vagas_desejadas_val = 0
                 bairro_desejado_val = ""
                 observacoes_val = ""
+                lead_edit = None
 
         if lead_edit:
             st.info(f"✏️ Editando: {lead_edit['nome']}")
@@ -639,7 +646,6 @@ def main():
 
                     if salvar_leads(st.session_state.leads):
                         st.success("✅ Dados salvos no Google Sheets!")
-                    # Forçar reset do formulário recarregando a página
                     st.rerun()
                 else:
                     st.error("❌ Nome e telefone são obrigatórios!")
