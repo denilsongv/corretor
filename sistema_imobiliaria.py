@@ -312,7 +312,6 @@ def salvar_imoveis(imoveis):
         return False
 
 def converter_valor_para_numero(valor_str):
-    """Converte string como '450k' ou '1.2M' para número (float)"""
     if not valor_str:
         return 0
     valor_str = str(valor_str).lower().strip()
@@ -327,7 +326,6 @@ def converter_valor_para_numero(valor_str):
             return 0
 
 def recomendar_imoveis(lead, imoveis, tolerancia=0.15):
-    """Filtra imóveis compatíveis com o lead"""
     if not imoveis:
         return []
     valor_lead_num = converter_valor_para_numero(lead.get("valor_imovel", ""))
@@ -340,15 +338,12 @@ def recomendar_imoveis(lead, imoveis, tolerancia=0.15):
         valor_imv_num = converter_valor_para_numero(imv.get("valor", ""))
         if valor_imv_num < min_valor or valor_imv_num > max_valor:
             continue
-        # Quartos desejados
         qtd_desejada = lead.get("quartos_desejados")
         if qtd_desejada and imv.get("quartos") and int(imv.get("quartos")) != int(qtd_desejada):
             continue
-        # Banheiros desejados
         ban_desejado = lead.get("banheiros_desejados")
         if ban_desejado and imv.get("banheiros") and int(imv.get("banheiros")) != int(ban_desejado):
             continue
-        # Bairro desejado
         bairro_desejado = lead.get("bairro_desejado", "").strip().lower()
         if bairro_desejado and bairro_desejado not in imv.get("bairro", "").lower():
             continue
@@ -526,7 +521,6 @@ def main():
         status_index = STATUS_LISTA.index(lead_edit["status"]) if lead_edit and lead_edit.get("status") in STATUS_LISTA else 0
         status = st.selectbox("Status", STATUS_LISTA, index=status_index)
 
-        # Preferências do cliente
         st.markdown("### 🎯 Preferências do Cliente")
         quartos_desejados = st.number_input("Quartos desejados", min_value=0, step=1, value=lead_edit["quartos_desejados"] if lead_edit and lead_edit.get("quartos_desejados") else 0)
         banheiros_desejados = st.number_input("Banheiros desejados", min_value=0, step=1, value=lead_edit["banheiros_desejados"] if lead_edit and lead_edit.get("banheiros_desejados") else 0)
@@ -1114,10 +1108,10 @@ def main():
         else:
             st.info("Nenhum compromisso futuro")
 
-    # ==================== TAB 5 - IMÓVEIS ====================
+    # ==================== TAB 5 - IMÓVEIS (COM EDIÇÃO) ====================
     with tab5:
         st.subheader("🏢 Base de Imóveis")
-        st.markdown("Cadastre os imóveis do seu acervo para que o sistema possa recomendar aos leads.")
+        st.markdown("Cadastre e edite os imóveis do seu acervo.")
 
         # Formulário para novo imóvel
         with st.expander("➕ Novo Imóvel", expanded=False):
@@ -1132,10 +1126,8 @@ def main():
 
             if st.button("💾 Salvar Imóvel", type="primary"):
                 if codigo and valor:
-                    # Verificar duplicatas
                     codigo_existente = any(i["codigo"] == codigo for i in st.session_state.imoveis)
                     link_existente = any(i["link"] == link for i in st.session_state.imoveis) if link else False
-
                     if codigo_existente:
                         st.error("❌ Já existe um imóvel com este código! Use um código diferente.")
                     elif link_existente:
@@ -1163,8 +1155,59 @@ def main():
         # Lista de imóveis existentes
         st.markdown("### 📋 Imóveis Cadastrados")
         if st.session_state.imoveis:
+            # Exibir tabela
             df_imoveis = pd.DataFrame(st.session_state.imoveis)
             st.dataframe(df_imoveis, use_container_width=True, hide_index=True)
+
+            # Seção de edição
+            st.markdown("---")
+            st.markdown("### ✏️ Editar Imóvel")
+            ids_imoveis = [i["id"] for i in st.session_state.imoveis]
+            id_editar = st.selectbox("Selecione o ID do imóvel para editar", ids_imoveis, key="editar_imovel_id")
+            imv_editar = next(i for i in st.session_state.imoveis if i["id"] == id_editar)
+
+            with st.form(key="form_editar_imovel"):
+                novo_codigo = st.text_input("Código", value=imv_editar["codigo"])
+                novo_valor = st.selectbox("Valor", VALORES_IMOVEL, index=VALORES_IMOVEL.index(imv_editar["valor"]) if imv_editar["valor"] in VALORES_IMOVEL else 0)
+                novo_quartos = st.number_input("Quartos", value=int(imv_editar["quartos"]) if imv_editar["quartos"] else 0, step=1)
+                novo_banheiros = st.number_input("Banheiros", value=int(imv_editar["banheiros"]) if imv_editar["banheiros"] else 0, step=1)
+                novo_bairro = st.text_input("Bairro", value=imv_editar["bairro"])
+                novo_rua = st.text_input("Rua", value=imv_editar["rua"])
+                novo_link = st.text_input("Link do anúncio", value=imv_editar["link"])
+                novo_opcionista = st.text_input("Opcionista", value=imv_editar["opcionista"])
+
+                col_edit1, col_edit2 = st.columns(2)
+                with col_edit1:
+                    submitted = st.form_submit_button("💾 Salvar Alterações", type="primary", use_container_width=True)
+                with col_edit2:
+                    cancel = st.form_submit_button("❌ Cancelar", use_container_width=True)
+
+                if submitted:
+                    # Verifica duplicatas (exceto o próprio imóvel)
+                    codigo_existente = any(i["codigo"] == novo_codigo and i["id"] != id_editar for i in st.session_state.imoveis)
+                    link_existente = any(i["link"] == novo_link and i["id"] != id_editar for i in st.session_state.imoveis) if novo_link else False
+                    if codigo_existente:
+                        st.error("❌ Já existe outro imóvel com este código! Use um código diferente.")
+                    elif link_existente:
+                        st.error("❌ Já existe outro imóvel com este link! Use um link diferente.")
+                    else:
+                        for i in st.session_state.imoveis:
+                            if i["id"] == id_editar:
+                                i["codigo"] = novo_codigo
+                                i["valor"] = novo_valor
+                                i["quartos"] = novo_quartos
+                                i["banheiros"] = novo_banheiros
+                                i["bairro"] = novo_bairro
+                                i["rua"] = novo_rua
+                                i["link"] = novo_link
+                                i["opcionista"] = novo_opcionista
+                                break
+                        if salvar_imoveis(st.session_state.imoveis):
+                            st.success("Imóvel atualizado com sucesso!")
+                        st.rerun()
+
+                if cancel:
+                    st.rerun()
 
             # Opção de deletar
             st.markdown("---")
