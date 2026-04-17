@@ -120,7 +120,7 @@ def salvar_leads(leads):
                 lead.get("quartos_desejados", 0),
                 lead.get("banheiros_desejados", 0),
                 lead.get("vagas_desejadas", 0),
-                lead.get("metragem_desejada", 0.0),
+                lead.get("metragem_desejada", 0),
                 lead.get("bairro_desejado", "")
             ])
         aba.clear()
