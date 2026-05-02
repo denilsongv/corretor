@@ -824,43 +824,106 @@ def main():
                 else:
                     st.info("Nenhum imóvel recomendado no momento. Ajuste os filtros ou cadastre mais imóveis.")
 
-                # ==================== MENSAGEM PRONTA ====================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                 # ==================== MENSAGEM PRONTA ====================
                 st.markdown("---")
                 st.subheader(f"📱 Mensagem para {lead_data['nome']}")
-                mensagens_ativas = [m for m in st.session_state.mensagens_personalizadas if m.get("ativa", True)]
 
-                if mensagens_ativas:
-                    col_msg_sel1, col_msg_sel2 = st.columns([3, 1])
-                    with col_msg_sel1:
-                        opcoes_mensagem = ["🤖 Mensagem Automática (IA)"] + [f"{m['titulo']} - {m['categoria']}" for m in mensagens_ativas]
-                        msg_escolhida = st.selectbox("Escolha o tipo de mensagem:", opcoes_mensagem, key=f"sel_msg_{lead_data['id']}")
-                    with col_msg_sel2:
-                        st.markdown("###")
-                        if st.button("🔄 Atualizar", use_container_width=True, key=f"atualizar_{lead_data['id']}"):
-                            st.rerun()
+                mensagens_ativas = [
+                    m for m in st.session_state.mensagens_personalizadas
+                    if m.get("ativa", True)
+                ]
 
-                    if msg_escolhida != "🤖 Mensagem Automática (IA)":
-                        idx = opcoes_mensagem.index(msg_escolhida) - 1
-                        msg_template = mensagens_ativas[idx]["mensagem"]
-                        nome_msg = lead_data["nome"].split()[0]
-                        codigo = lead_data.get("codigo_imovel", "")
-                        valor = lead_data.get("valor_imovel", "")
-                        link = lead_data.get("link_imovel", "")
-                        try:
-                            mensagem = msg_template.format(nome=nome_msg, codigo=codigo, valor=valor, link=link)
-                        except Exception:
-                            mensagem = msg_template
-                    else:
-                        temperatura = calcular_temperatura(lead_data)
-                        mensagem = gerar_mensagem_ia(lead_data, temperatura)
+                opcoes_mensagem = [
+                    {
+                        "id": "ia",
+                        "label": "🤖 Mensagem Automática (IA)",
+                        "tipo": "ia"
+                    }
+                ]
+
+                for m in mensagens_ativas:
+                    opcoes_mensagem.append({
+                        "id": str(m.get("id")),
+                        "label": f"{m['titulo']} - {m['categoria']}",
+                        "tipo": "personalizada",
+                        "mensagem": m.get("mensagem", "")
+                    })
+
+                col_msg_sel1, col_msg_sel2 = st.columns([3, 1])
+
+                with col_msg_sel1:
+                    indice_msg_escolhida = st.selectbox(
+                        "Escolha o tipo de mensagem:",
+                        options=list(range(len(opcoes_mensagem))),
+                        format_func=lambda i: opcoes_mensagem[i]["label"],
+                        key=f"sel_msg_novo_{lead_data['id']}"
+                    )
+
+                with col_msg_sel2:
+                    st.markdown("###")
+                    if st.button("🔄 Atualizar", use_container_width=True, key=f"atualizar_{lead_data['id']}"):
+                        st.rerun()
+
+                opcao_escolhida = opcoes_mensagem[indice_msg_escolhida]
+
+                if opcao_escolhida["tipo"] == "personalizada":
+                    msg_template = opcao_escolhida.get("mensagem", "")
+
+                    nome_msg = lead_data["nome"].split()[0]
+                    codigo = lead_data.get("codigo_imovel", "")
+                    valor = lead_data.get("valor_imovel", "")
+                    link = lead_data.get("link_imovel", "")
+
+                    try:
+                        mensagem = msg_template.format(
+                            nome=nome_msg,
+                            codigo=codigo,
+                            valor=valor,
+                            link=link
+                        )
+                    except Exception:
+                        mensagem = msg_template
                 else:
                     temperatura = calcular_temperatura(lead_data)
                     mensagem = gerar_mensagem_ia(lead_data, temperatura)
-                    st.info("💡 Crie mensagens personalizadas na aba 'Gerenciar Mensagens'")
+
+                    if not mensagens_ativas:
+                        st.info("💡 Crie mensagens personalizadas na aba 'Gerenciar Mensagens'")
 
                 st.markdown("### 💬 Mensagem Pronta:")
                 st.info(mensagem)
-                mensagem_editavel = st.text_area("✏️ Editar mensagem (se necessário):", mensagem, height=150, key=f"msg_{lead_data['id']}")
+
+                chave_mensagem_editavel = f"msg_editavel_{lead_data['id']}_{opcao_escolhida['id']}"
+
+                mensagem_editavel = st.text_area(
+                    "✏️ Editar mensagem (se necessário):",
+                    value=mensagem,
+                    height=150,
+                    key=chave_mensagem_editavel
+                )
+
+
+
+
+
+
+
+
 
                 st.markdown("### 🎯 Ações:")
                 col_btn1, col_btn2, col_btn3, col_btn4 = st.columns(4)
