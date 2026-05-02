@@ -608,11 +608,35 @@ def main():
         bairro_desejado = st.text_input("Bairro desejado", value=bairro_desejado_val)
 
         observacoes = st.text_area("Observações", value=observacoes_val)
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
         col_salvar, col_deletar = st.columns(2)
+
         with col_salvar:
             if st.button("💾 Salvar", type="primary", use_container_width=True):
                 if nome and telefone:
+
+                    def normalizar_telefone(valor):
+                        telefone_limpo = re.sub(r"\D", "", str(valor))
+
+                        if telefone_limpo.startswith("55") and len(telefone_limpo) > 11:
+                            telefone_limpo = telefone_limpo[2:]
+
+                        return telefone_limpo
+
                     if lead_edit:
                         for i, lead in enumerate(st.session_state.leads):
                             if lead["id"] == lead_edit["id"]:
@@ -638,44 +662,110 @@ def main():
                                 }
                                 st.success(f"✅ {nome} atualizado!")
                                 break
+
                     else:
-                        novo_id = max([l["id"] for l in st.session_state.leads], default=0) + 1
-                        novo_lead = {
-                            "id": novo_id,
-                            "nome": nome,
-                            "telefone": telefone,
-                            "data_cadastro": datetime.now().strftime("%d/%m/%Y"),
-                            "perfil": perfil,
-                            "codigo_imovel": codigo_imovel,
-                            "link_imovel": link_imovel,
-                            "valor_imovel": valor_imovel,
-                            "origem": origem,
-                            "status": status,
-                            "ultimo_contato": None,
-                            "observacoes": observacoes,
-                            "quartos_desejados": quartos_desejados,
-                            "banheiros_desejados": banheiros_desejados,
-                            "vagas_desejadas": vagas_desejadas,
-                            "metragem_desejada": metragem_desejada,
-                            "bairro_desejado": bairro_desejado,
-                            "mensagens_enviadas": []
-                        }
-                        st.session_state.leads.append(novo_lead)
-                        st.success(f"✅ {nome} cadastrado!")
+                        telefone_limpo_novo = normalizar_telefone(telefone)
+
+                        lead_existente = next(
+                            (
+                                l for l in st.session_state.leads
+                                if normalizar_telefone(l.get("telefone", "")) == telefone_limpo_novo
+                            ),
+                            None
+                        )
+
+                        if lead_existente:
+                            for i, lead in enumerate(st.session_state.leads):
+                                if lead["id"] == lead_existente["id"]:
+                                    st.session_state.leads[i] = {
+                                        "id": lead_existente["id"],
+                                        "nome": nome,
+                                        "telefone": telefone,
+                                        "data_cadastro": lead_existente.get("data_cadastro", datetime.now().strftime("%d/%m/%Y")),
+                                        "perfil": perfil,
+                                        "codigo_imovel": codigo_imovel,
+                                        "link_imovel": link_imovel,
+                                        "valor_imovel": valor_imovel,
+                                        "origem": origem,
+                                        "status": status,
+                                        "ultimo_contato": lead_existente.get("ultimo_contato"),
+                                        "observacoes": observacoes,
+                                        "quartos_desejados": quartos_desejados,
+                                        "banheiros_desejados": banheiros_desejados,
+                                        "vagas_desejadas": vagas_desejadas,
+                                        "metragem_desejada": metragem_desejada,
+                                        "bairro_desejado": bairro_desejado,
+                                        "mensagens_enviadas": lead_existente.get("mensagens_enviadas", [])
+                                    }
+                                    st.success(f"✅ {nome} já existia e foi atualizado!")
+                                    break
+
+                        else:
+                            novo_id = max([l["id"] for l in st.session_state.leads], default=0) + 1
+
+                            novo_lead = {
+                                "id": novo_id,
+                                "nome": nome,
+                                "telefone": telefone,
+                                "data_cadastro": datetime.now().strftime("%d/%m/%Y"),
+                                "perfil": perfil,
+                                "codigo_imovel": codigo_imovel,
+                                "link_imovel": link_imovel,
+                                "valor_imovel": valor_imovel,
+                                "origem": origem,
+                                "status": status,
+                                "ultimo_contato": None,
+                                "observacoes": observacoes,
+                                "quartos_desejados": quartos_desejados,
+                                "banheiros_desejados": banheiros_desejados,
+                                "vagas_desejadas": vagas_desejadas,
+                                "metragem_desejada": metragem_desejada,
+                                "bairro_desejado": bairro_desejado,
+                                "mensagens_enviadas": []
+                            }
+
+                            st.session_state.leads.append(novo_lead)
+                            st.success(f"✅ {nome} cadastrado!")
 
                     if salvar_leads(st.session_state.leads):
                         st.success("✅ Dados salvos no Google Sheets!")
+
                     st.rerun()
+
                 else:
                     st.error("❌ Nome e telefone são obrigatórios!")
 
         with col_deletar:
             if lead_edit:
                 if st.button("🗑️ Deletar", use_container_width=True):
-                    st.session_state.leads = [l for l in st.session_state.leads if l["id"] != lead_edit["id"]]
+                    st.session_state.leads = [
+                        l for l in st.session_state.leads
+                        if l["id"] != lead_edit["id"]
+                    ]
+
                     if salvar_leads(st.session_state.leads):
                         st.success(f"✅ {lead_edit['nome']} removido!")
+
                     st.rerun()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         st.markdown("---")
         st.markdown("### 📊 Métricas")
